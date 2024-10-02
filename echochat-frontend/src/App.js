@@ -1,24 +1,27 @@
 import logo from './logo.svg';
 import './App.css';
+import Navbar from './components/Navbar';
+import EchoState from './context/EchoState';
+import { Route, Routes } from 'react-router-dom';
+import Login from './components/Login';
+import SignUp from './components/Signup';
+import Alert from './components/Alert';
+import User from './components/User';
+import ChatBox from './components/ChatBox';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+
+    <EchoState>
+      <Navbar/>
+      <Alert/>
+      <Routes>
+      <Route exact path="/login" element={<Login/>} />
+      <Route exact path="/users" element={<User/>} />
+      <Route exact path="/chat-box" element={<ChatBox/>} />
+      <Route exact path="/Sign-up" element={<SignUp/>} />
+      </Routes>
+    </EchoState>
   );
 }
 
