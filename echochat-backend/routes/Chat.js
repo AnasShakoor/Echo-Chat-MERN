@@ -92,11 +92,10 @@ router.post('/mark-read', getUser, [
         }
         
         // Use `findOneAndUpdate` and ensure correct query/update
-        const message = await Message.findOneAndUpdate(
-            { roomId: roomId, receiver: receiver, read: false },  // Query to find unread message
-            { $set: { read: true } },  // Update to set read to true
-            { new: true }  // Option to return the updated document
-        );
+            const message = await Message.updateMany(
+                { roomId: roomId, receiver: receiver, read: false },  // Query to find unread message
+                { $set: { read: true } },  // Update to set read to true
+            );
         
         if (!message) {
             return res.status(404).json({
@@ -113,6 +112,46 @@ router.post('/mark-read', getUser, [
         });
     } catch (error) {
         console.error(error);  // Log error for debugging
+        res.status(500).json({
+            success: false,
+            message: "Failed to update the message"
+        });
+    }
+    
+
+})
+
+
+
+router.post('/get-first-unread', getUser, [
+    check('roomId', 'Room Id  is required').not().isEmpty(),
+], async (req, res) => {
+    const errors = validationResult(req);
+
+    if (!errors.isEmpty()) {
+        return res.status(422).json(errors.array());
+    }
+    try {
+        const { roomId } = req.body;
+            const message = await Message.findOne(
+                { roomId: roomId, read: false },  
+            );
+        
+        if (!message) {
+            return res.status(404).json({
+                success: false,
+                message: "No unread message found or already updated"
+            });
+        }
+    
+        
+        res.status(200).json({
+            success: true,
+            message: "The last unread message fetched successfully",
+            data: message
+        });
+    } catch (error) {
+        console.error(error); 
         res.status(500).json({
             success: false,
             message: "Failed to update the message"

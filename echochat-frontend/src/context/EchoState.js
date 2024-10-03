@@ -73,6 +73,35 @@ const EchoState = (props) => {
     };
 
 
+  const getFirstUnreadMessage = async ( roomId) => {
+        try {
+            const response = await fetch('http://localhost:3000/api/chat/get-first-unread',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'auth-token': localStorage.getItem('token')
+                    },
+                    body: JSON.stringify({
+                        roomId : roomId
+                    }),
+                });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw errorData
+            }
+
+            const json = await response.json();
+            return json;
+
+        } catch (error) {
+
+            throw error
+        }
+    };
+
+
     const newMessage = async (senderId,receiverId,roomId,message) => {
         try {
             const response = await fetch('http://localhost:3000/api/chat',
@@ -192,7 +221,7 @@ const EchoState = (props) => {
 
 
     return (
-        <EchoContext.Provider value={{ alert, Login, SignUp, showAlert, getUsers,newMessage,chatHistory,markAsRead }}>
+        <EchoContext.Provider value={{ alert, Login, SignUp, showAlert, getUsers,newMessage,chatHistory,markAsRead ,getFirstUnreadMessage}}>
             {props.children}
         </EchoContext.Provider>
     )

@@ -32,6 +32,13 @@ const io = new Server(server, {
 
 let onlineUsers = {};
 io.on('connection', (socket) => {
+
+
+  socket.on('Update read status', (roomId) => {
+    socket.to(roomId).emit('Update read status 2');
+  });
+
+
   socket.on('joinRoom', ({roomId,userId}) => {
     socket.join(roomId); 
 
