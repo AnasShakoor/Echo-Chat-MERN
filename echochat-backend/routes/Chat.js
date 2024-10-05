@@ -24,7 +24,7 @@ router.post('/', getUser, [
             receiver,
             roomId,
             message,
-            read : false
+            read: false
         })
 
         res.status(201).json({
@@ -82,7 +82,7 @@ router.post('/mark-read', getUser, [
     }
     try {
         const { roomId, receiver } = req.body;
-        
+
         // Ensure both values exist before continuing
         if (!roomId || !receiver) {
             return res.status(400).json({
@@ -90,20 +90,20 @@ router.post('/mark-read', getUser, [
                 message: "roomId and receiver are required"
             });
         }
-        
+
         // Use `findOneAndUpdate` and ensure correct query/update
-            const message = await Message.updateMany(
-                { roomId: roomId, receiver: receiver, read: false },  // Query to find unread message
-                { $set: { read: true } },  // Update to set read to true
-            );
-        
+        const message = await Message.updateMany(
+            { roomId: roomId, receiver: receiver, read: false },  // Query to find unread message
+            { $set: { read: true } },  // Update to set read to true
+        );
+
         if (!message) {
             return res.status(404).json({
                 success: false,
                 message: "No message found or already updated"
             });
         }
-    
+
         // If message is found and updated
         res.status(200).json({
             success: true,
@@ -117,7 +117,7 @@ router.post('/mark-read', getUser, [
             message: "Failed to update the message"
         });
     }
-    
+
 
 })
 
@@ -133,33 +133,60 @@ router.post('/get-first-unread', getUser, [
     }
     try {
         const { roomId } = req.body;
-            const message = await Message.findOne(
-                { roomId: roomId, read: false },  
-            );
-        
+        const message = await Message.findOne(
+            { roomId: roomId, read: false },
+        );
+
         if (!message) {
             return res.status(404).json({
                 success: false,
                 message: "No unread message found or already updated"
             });
         }
-    
-        
         res.status(200).json({
             success: true,
             message: "The last unread message fetched successfully",
             data: message
         });
     } catch (error) {
-        console.error(error); 
+        console.error(error);
         res.status(500).json({
             success: false,
             message: "Failed to update the message"
         });
     }
-    
+
 
 })
+
+
+router.get('/unread-messages/:roomId', getUser, async (req, res) => {
+    
+    try {
+       const roomId = req.params.roomId;
+
+       const count = await Message.countDocuments({ roomId: roomId, read: false });
+
+        if (!count) {
+            return res.status(200).json({
+                unreadCount: 0
+            });
+        }
+        res.status(200).json({
+            success: true,
+            unreadCount: count
+        });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({
+            success: false,
+            message: "Failed to get un read messages"
+        });
+    }
+
+
+})
+
 
 
 

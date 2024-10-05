@@ -119,10 +119,9 @@ function ChatBox() {
 
         newSocket.on("Update read status 2", () => {
             setMessages(prevMessages => {
-                
                 return prevMessages.map(message => ({
                     ...message,
-                    read: message.read === false ? true : message.read // Update read status here
+                    read: message.read === false ? true : message.read 
                 }));
             });
         })
