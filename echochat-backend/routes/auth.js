@@ -44,7 +44,7 @@ router.post(
         let secPass = bcrypt.hashSync(password, salt);
 
         // creating the user
-        const user = await User.create({
+         await User.create({
             name: name,
             email: email,
             password: secPass,

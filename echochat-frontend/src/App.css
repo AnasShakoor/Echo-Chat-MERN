@@ -61,6 +61,10 @@
   border-right-color: #0b0b0b;
   transform: rotate(-40deg);
 }
+.fa-file::before {
+  content: ''; /* Or any icon or text you'd like */
+  padding-right: 3px;
+}
 
 @keyframes rotation {
   0% {
@@ -71,3 +75,22 @@
   }
 } 
 /*  */
+
+
+/* HTML: <div class="loader"></div> */
+.file-loader {
+  width: fit-content;
+  font-weight: bold;
+  font-family: sans-serif;
+  font-size: 30px;
+  position: relative;
+  left: 40%;
+  Top: 50%;
+  padding-bottom: 8px;
+  background: linear-gradient(currentColor 0 0) 0 100%/0% 3px no-repeat;
+  animation: l2 2s linear infinite;
+}
+.file-loader:before {
+  content:"Uploading Image..."
+}
+@keyframes l2 {to{background-size: 100% 3px}}

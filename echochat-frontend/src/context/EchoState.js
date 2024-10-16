@@ -1,11 +1,18 @@
-import { useNavigate } from 'react-router-dom';
 import React from "react";
 import EchoContext from './EchoContext'
 import { useState, useRef, useEffect } from "react";
-
+import { useNavigate, Link } from 'react-router-dom';
+import io from 'socket.io-client';
+const SOCKET_SERVER_URL = 'http://localhost:3000';
 
 const EchoState = (props) => {
+    const navigate = useNavigate()
+
+
     const [alert, setAlert] = useState({ state: false, message: "no message" });
+
+    const [socket, setSocket] = useState(null);
+
     const showAlert = (message) => {
         setAlert({ state: true, message: message })
         setTimeout(() => {
@@ -16,12 +23,12 @@ const EchoState = (props) => {
 
 
 
-      
-    const countUnreadMessages = async (user1,user2) => {
+
+    const countUnreadMessages = async (user1, user2, receiverId) => {
         const sortedIDs = [user2, user1].sort();
         const roomId = sortedIDs.join('-');
         try {
-            const response = await fetch(`http://localhost:3000/api/chat/unread-messages/${roomId}`,
+            const response = await fetch(`http://localhost:3000/api/chat/unread-messages/${roomId}/${receiverId}`,
                 {
                     method: 'GET',
                     headers: {
@@ -139,21 +146,31 @@ const EchoState = (props) => {
     };
 
 
-    const newMessage = async (senderId, receiverId, roomId, message) => {
+    const newMessage = async ({senderId, receiverId, roomId, message,file}) => {
+        const formData = new FormData();
+        formData.append('sender', senderId);
+        formData.append('receiver', receiverId);
+        formData.append('roomId', roomId);
+        if (message) {
+            formData.append('message', message);
+        }
+        if (file) {
+            formData.append('file', file);
+        }
+
+        // Log FormData for debugging
+    for (let [key, value] of formData.entries()) {
+        console.log(`${key}:`, value);
+    }
         try {
             const response = await fetch('http://localhost:3000/api/chat',
                 {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'auth-token': localStorage.getItem('token')
+                        'auth-token': localStorage.getItem('token'),
+                        // 'content-type': "multipart/form-data"
                     },
-                    body: JSON.stringify({
-                        sender: senderId,
-                        receiver: receiverId,
-                        roomId: roomId,
-                        message: message
-                    }),
+                    body: formData,
                 });
 
             if (!response.ok) {
@@ -166,6 +183,7 @@ const EchoState = (props) => {
 
         } catch (error) {
 
+            console.log(error)
             throw error
         }
     };
@@ -256,9 +274,32 @@ const EchoState = (props) => {
         }
     };
 
+    // const as=()=>{
+
+    //       setSocket(newSocket);
+    // }
+
+
+
+    useEffect(() => {
+        if (!localStorage.getItem("token")) {
+            navigate("/login")
+        }
+        const sockets = io(SOCKET_SERVER_URL, {
+            transports: ['websocket'],
+        });
+        setSocket(sockets);
+
+        return (() => {
+            sockets.disconnect();
+        })
+
+    }, [])
+
+
 
     return (
-        <EchoContext.Provider value={{ alert, Login, SignUp, showAlert, getUsers, newMessage, chatHistory, markAsRead, getFirstUnreadMessage ,  countUnreadMessages}}>
+        <EchoContext.Provider value={{ alert, socket, Login, SignUp, showAlert, getUsers, newMessage, chatHistory, markAsRead, getFirstUnreadMessage, countUnreadMessages, setSocket }}>
             {props.children}
         </EchoContext.Provider>
     )

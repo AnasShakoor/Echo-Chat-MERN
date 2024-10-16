@@ -3,43 +3,79 @@ const router = express.Router();
 const getUser = require("../middleware/getUser")
 const { check, validationResult } = require('express-validator');
 const Message = require("../models/Message")
+const multer = require('multer')
+const upload = multer({ dest: 'uploads/',
+    limits: { fileSize: 10 * 1024 * 1024 } 
+ })
+const path = require('path');
+
+    router.post('/', getUser,
+        upload.single('file'),
+        [
+            check('sender', 'Sender id is required').not().isEmpty(),
+            check('receiver', 'receiver id  is required').not().isEmpty(),
+            check('roomId', 'Room Id  is required').not().isEmpty(),
+            
+        ], async (req, res) => {
+            const errors = validationResult(req);
+
+            if (!errors.isEmpty()) {
+                return res.status(422).json(errors.array());
+            }
+
+            try {
+                const { sender, receiver, roomId, message } = req.body;
+                const chat = {
+                    sender,
+                    receiver,
+                    roomId,
+                    message: message || null,
+                    read: false
+                }
+
+                if (req.file) {
+                    const file = req.file
+                    const ext = path.extname(file.originalname)
+                    const newFileName = `${file.filename}${ext}`;
+                    const Url = `${req.protocol}://${req.get('host')}/api/files/${newFileName}`
+                    const fs = require("fs");
+
+                    const oldPath = file.path;
+                    const newPath = path.join("uploads", newFileName)
+
+                    await new Promise((res,rej)=>{
+                        fs.rename(oldPath, newPath, (err) => {
+                            if(err){
+                                rej(err)
+                            }else{
+                                res();
+                            }
+                        })
+                    })
+                    
+                    chat.fileUrl = Url;
+                    chat.fileType = file.mimetype;
+                    chat.fileName = file.originalname;
+                    chat.fileSize = file.size;
+                }
+
+                const data = new Message(chat);
+                data.save();
 
 
-router.post('/', getUser, [
-    check('sender', 'Sender id is required').not().isEmpty(),
-    check('receiver', 'receiver id  is required').not().isEmpty(),
-    check('roomId', 'Room Id  is required').not().isEmpty(),
-    check('message', 'message  is required').not().isEmpty(),
-], async (req, res) => {
-    const errors = validationResult(req);
+                res.status(201).json({
+                    success: true,
+                    chat
+                });
+            } catch (error) {
+                console.error(error);
+                res.status(500).json({
+                    success: false,
+                    message: "Failed to create message"
+                });
+            }
 
-    if (!errors.isEmpty()) {
-        return res.status(422).json(errors.array());
-    }
-
-    try {
-        const { sender, receiver, roomId, message } = req.body;
-        const chat = await Message.create({
-            sender,
-            receiver,
-            roomId,
-            message,
-            read: false
         })
-
-        res.status(201).json({
-            success: true,
-            chat
-        });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({
-            success: false,
-            message: "Failed to create message"
-        });
-    }
-
-})
 
 
 router.post('/history', getUser, [
@@ -160,12 +196,13 @@ router.post('/get-first-unread', getUser, [
 })
 
 
-router.get('/unread-messages/:roomId', getUser, async (req, res) => {
-    
-    try {
-       const roomId = req.params.roomId;
+router.get('/unread-messages/:roomId/:receirverId', getUser, async (req, res) => {
 
-       const count = await Message.countDocuments({ roomId: roomId, read: false });
+    try {
+        const roomId = req.params.roomId;
+        const receirverId = req.params.receirverId;
+
+        const count = await Message.countDocuments({ roomId: roomId, receiver: receirverId, read: false });
 
         if (!count) {
             return res.status(200).json({

@@ -14,7 +14,7 @@ const getUser = (req, res, next) => {
         req.id = data.id;
     } catch (error) {
         return res.status(401).json({ error: "Invalid Auth Token" });
-    }
+        }
     next();
 }
 
